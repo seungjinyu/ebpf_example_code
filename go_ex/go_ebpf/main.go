@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/iovisor/gobpf/bcc"
@@ -13,7 +14,7 @@ const source string = `
 #include <uapi/linux/ptrace.h>
 
 int hello(void *ctx) {
-    bpf_trace_printk("Hello World! Someone connected via SSH\\n");
+    bpf_trace_printk("Hello World! Someone connected via SSH\n");
     return 0;
 }
 `
@@ -35,13 +36,32 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Println("Press Ctrl+C to stop...")
+	// Open the trace pipe to read eBPF program output
+	tracePipe := make(chan []byte)
+	perfMap, err := bcc.InitPerfMap(module, "events", tracePipe)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to initialize PerfMap: %v\n", err)
+		os.Exit(1)
+	}
 
-	// Listen for Ctrl+C signal to detach the program and exit
+	// Start the PerfMap
+	perfMap.Start()
+
+	// Listen for Ctrl+C signal to stop the PerfMap and exit
 	signalCh := make(chan os.Signal, 1)
 	signal.Notify(signalCh, syscall.SIGINT, syscall.SIGTERM)
-	<-signalCh
+	go func() {
+		<-signalCh
+		perfMap.Stop()
+		os.Exit(0)
+	}()
 
-	// Close the module to detach the eBPF program and unload the module
-	module.Close()
+	// Print the SSH connection logs
+	for {
+		data := <-tracePipe
+		message := string(data)
+		if strings.Contains(message, "Hello World! Someone connected via SSH") {
+			fmt.Println(message)
+		}
+	}
 }

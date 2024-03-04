@@ -1,67 +1,64 @@
 package main
 
 import (
-	"fmt"
-	"os"
-	"os/signal"
-	"strings"
-	"syscall"
+    "log"
+    "net"
+    "os"
+    "os/signal"
+    "time"
 
-	"github.com/iovisor/gobpf/bcc"
+    "github.com/cilium/ebpf/link"
+    "github.com/cilium/ebpf/rlimit"
 )
 
-const source string = `
-#include <uapi/linux/ptrace.h>
-
-int hello(void *ctx) {
-    bpf_trace_printk("Hello World! Someone connected via SSH\n");
-    return 0;
-}
-`
-
 func main() {
-	// Create a new eBPF module
-	module := bcc.NewModule(source, []string{})
+    // Remove resource limits for kernels <5.11.
+    if err := rlimit.RemoveMemlock(); err != nil { 
+        log.Fatal("Removing memlock:", err)
+    }
 
-	// Attach the eBPF program to the SSH login event
-	sshLogin, err := module.LoadKprobe("hello")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to load Kprobe: %v\n", err)
-		os.Exit(1)
-	}
+    // Load the compiled eBPF ELF and load it into the kernel.
+    var objs counterObjects 
+    if err := loadCounterObjects(&objs, nil); err != nil {
+        log.Fatal("Loading eBPF objects:", err)
+    }
+    defer objs.Close() 
 
-	err = module.AttachKprobe("tcp_v4_connect", sshLogin, -1)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to attach Kprobe: %v\n", err)
-		os.Exit(1)
-	}
+    ifname := "enp0s3" // Change this to an interface on your machine.
+    iface, err := net.InterfaceByName(ifname)
+    if err != nil {
+        log.Fatalf("Getting interface %s: %s", ifname, err)
+    }
 
-	// Open the trace pipe to read eBPF program output
-	tracePipe := make(chan []byte)
-	perfMap, err := bcc.InitPerfMap(module, "events", tracePipe)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to initialize PerfMap: %v\n", err)
-		os.Exit(1)
-	}
+    // Attach count_packets to the network interface.
+    link, err := link.AttachXDP(link.XDPOptions{ 
+        Program:   objs.CountPackets,
+        Interface: iface.Index,
+    })
+    if err != nil {
+        log.Fatal("Attaching XDP:", err)
+    }
+    defer link.Close() 
 
-	// Start the PerfMap
-	perfMap.Start()
+    log.Printf("Counting incoming packets on %s..", ifname)
 
-	// Listen for Ctrl+C signal to stop the PerfMap and exit
-	signalCh := make(chan os.Signal, 1)
-	signal.Notify(signalCh, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-		<-signalCh
-		perfMap.Stop()
-		os.Exit(0)
-	}()
-
-	// Print the SSH connection logs
-	for {
-		data := <-tracePipe
-		message := string(data)
-		if strings.Contains(message, "Hello World! Someone connected via SSH") {
-			fmt.Println(message)
-		}
-	}
+    // Periodically fetch the packet counter from PktCount,
+    // exit the program when interrupted.
+    tick := time.Tick(time.Second)
+    stop := make(chan os.Signal, 5)
+    signal.Notify(stop, os.Interrupt)
+    for {
+        select {
+        case <-tick:
+            var count uint64
+            err := objs.PktCount.Lookup(uint32(0), &count) 
+            if err != nil {
+                log.Fatal("Map lookup:", err)
+            }
+            log.Printf("Received %d packets", count)
+        case <-stop:
+            log.Print("Received signal, exiting..")
+            return
+        }
+    }
 }

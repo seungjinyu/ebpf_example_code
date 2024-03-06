@@ -1,0 +1,1 @@
+savedcmd_/home/nway/test/ebpf_example_code/c_ex/hello-1/hello-1.mod := printf '%s\n'   hello-1.o | awk '!x[$$0]++ { print("/home/nway/test/ebpf_example_code/c_ex/hello-1/"$$0) }' > /home/nway/test/ebpf_example_code/c_ex/hello-1/hello-1.mod

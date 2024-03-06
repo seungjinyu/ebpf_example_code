@@ -1,1 +1,0 @@
-savedcmd_/home/nway/test/ebpf_example_code/c_ex/hello-1/Module.symvers :=  scripts/mod/modpost -m -a      -o /home/nway/test/ebpf_example_code/c_ex/hello-1/Module.symvers -T /home/nway/test/ebpf_example_code/c_ex/hello-1/modules.order -i Module.symvers -e 

@@ -3,7 +3,8 @@ obj-m += hello-2.o
 
 PWD := $(CURDIR)
  
-all: 
+all:
+	echo $(PWD) 	
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules 
  
 clean: 

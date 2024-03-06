@@ -10,6 +10,8 @@ sudo lsmod | grep hello
 
 sudo rmmod hello_1
 
+sudo journalctl --since "1 hour ago" | grep kernel
+
 # module parameter 권한 
 
 sysfs 에 노출 되지 않으려면 권한 비트를 0 으로 설정해야 한다. 

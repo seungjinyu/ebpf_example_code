@@ -1,7 +1,5 @@
 obj-m +=chardevice.o
-chardevice-objs := chardevice.o 
-
-
+chardevice-objs := chardev.o 
 
 PWD := $(CURDIR)
  

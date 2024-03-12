@@ -6,8 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-affinity = "0.1.1"
+# affinity = "0.1.1"
 failure = "0.1.8"
+libc = "0.2.153"
 node = "0.0.1-pre.1"
 num_cpus = "1.16.0"
 rand = "0.8.5"

@@ -1,6 +1,8 @@
 use select::document::Document;
 
-use std::{env, thread};
+use libc;
+
+use std::{env, io, thread};
 
 use reqwest::{self};
 
@@ -9,14 +11,27 @@ fn main() {
 
     let args: Vec<String> = env::args().collect();
 
-    let num_cores = num_cpus::get();
+    // let num_cores = num_cpus::get();
 
-    println!("number of cores {:?}", num_cores);
+    // println!("number of cores {:?}", num_cores);
 
-    let handle = thread::spawn(move || {
-        let cord_id = affinity::get_core_id().unwrap();
-        println!("Hello from CPU core {}", cord_id);
+    // let handle = thread::spawn(move || {
+    //     let cord_id = affinity::get_thread_affinity();
+    //     println!("Hello from CPU core {}", cord_id.unwrap());
+    // });
+    let other_thread = thread::spawn(|| {
+        println!(
+            "I am thread {:?} on cpu {:?}",
+            thread::current().id(),
+            current_cpu()
+        );
     });
+    println!(
+        "I am thread {:?} on cpu {:?}",
+        thread::current().id(),
+        current_cpu()
+    );
+    other_thread.join().unwrap();
 
     match args.get(1).unwrap().trim() {
         "single" => {
@@ -73,4 +88,16 @@ fn parse_titles(html: &str) -> Vec<String> {
     }
 
     titles
+}
+
+fn current_cpu() -> Result<usize, io::Error> {
+    let ret = unsafe {
+        libc::sched_getcpu();
+    };
+
+    if ret < 0 {
+        Err(io::Error::last_os_error())
+    } else {
+        Ok(ret as usize)
+    }
 }

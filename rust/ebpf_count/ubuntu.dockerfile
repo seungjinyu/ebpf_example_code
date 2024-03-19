@@ -1,39 +1,15 @@
-# Use Ubuntu 20.04 as base image
-FROM ubuntu:jammy
+FROM docker/for-desktop-kernel:5.10.25-6594e668feec68f102a58011bb42bd5dc07a7a9b AS ksrc
 
-# Set environment variables
-ENV DEBIAN_FRONTEND=noninteractive
+FROM ubuntu:latest
 
-# Update package lists and install necessary dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    ca-certificates \
-    build-essential \
-    llvm \
-    # clang \
-    curl 
-    # && rm -rf /var/lib/apt/lists/*
+WORKDIR /
+COPY --from=ksrc /kernel-dev.tar /
+RUN tar xf kernel-dev.tar && rm kernel-dev.tar
 
-# Install Rust using Rustup
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
+RUN apt-get update
+RUN apt install -y kmod python3-bpfcc
 
-# Add cargo and rust to PATH
-ENV PATH="/root/.cargo/bin:${PATH}"
+COPY hello_world.py /root
 
-# Display installed versions
-RUN rustup --version && \
-    rustc --version && \
-    cargo --version
-
-# aya setting 
-RUN rustup install stable
-RUN rustup toolchain install nightly --component rust-src
-RUN cargo install bpf-linker
-RUN cargo install --no-default-features bpf-linker
-RUN cargo install cargo-generate
-RUN cargo generate https://github.com/aya-rs/aya-template
-
-# Set the default working directory
-WORKDIR /app
-
-# CMD [ "bash" ] # If you want to enter into the container shell when it starts
+WORKDIR /root
+CMD mount -t debugfs debugfs /sys/kernel/debug && /bin/bash

@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -10,9 +11,29 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
+
+	sdk "agones.dev/agones/sdks/go"
 )
 
 func main() {
+
+	sdk, err := sdk.NewSDK()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// err = sdk.Ready()
+
+	// if err != nil {
+	// 	fmt.Printf("Failed to register game server %v \n ", err)
+	// 	return
+	// }
+
+	ticker := time.NewTicker(time.Duration(2) * time.Millisecond)
+
+	defer ticker.Stop()
 
 	quit := make(chan os.Signal, 1)
 
@@ -22,16 +43,27 @@ func main() {
 
 	var wg sync.WaitGroup
 
-	port := "8080"
+	port := "8034"
+	portSub := "8037"
 
 	wg.Add(1)
 
 	go func() {
+		for range ticker.C {
+			// Your game server logic here
+			sdk.Health()
+			fmt.Println("Ticker ticked! Do something...")
+		}
+	}()
+	go func() {
 		tcpListener(&port, cancel)
-
+	}()
+	go func() {
+		tcpListener(&portSub, cancel)
 	}()
 	go func() {
 		<-quit
+		sdk.Shutdown()
 		log.Printf("Gracefully shutting down")
 		defer wg.Done()
 	}()

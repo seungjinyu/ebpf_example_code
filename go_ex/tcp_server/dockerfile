@@ -1,0 +1,26 @@
+# Use the official Go image as the base image
+FROM golang:1.21.5-alpine3.18 as builder 
+
+# Set the working directory inside the container
+WORKDIR /home
+
+# Copy the Go module files
+COPY go.mod ./
+
+# Download the dependencies
+RUN go mod download
+
+RUN go mod verify
+
+# Copy the source code from the host to the container
+COPY . .
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o app 
+
+FROM gcr.io/distroless/static-debian11 as base
+
+COPY --from=builder /home/app .
+
+# Set the command to run the executable
+CMD ["./app"]
+

@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"context"
-	"fmt"
 	"log"
 	"net"
 	"os"
@@ -52,7 +51,7 @@ func main() {
 		for range ticker.C {
 			// Your game server logic here
 			sdk.Health()
-			fmt.Println("Ticker ticked! Do something...")
+			// fmt.Println("Ticker ticked! Do something...")
 		}
 	}()
 	go func() {

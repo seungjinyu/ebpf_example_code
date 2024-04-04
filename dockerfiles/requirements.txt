@@ -1,0 +1,5 @@
+pendulum
+requests
+beautifulsoup4
+lingua-language-detector
+

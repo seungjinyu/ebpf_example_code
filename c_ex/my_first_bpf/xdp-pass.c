@@ -21,14 +21,19 @@ int xdp_prog_simple(struct xdp_md *ctx)
 {
     __u32 data_meta_value = ctx->data;
     __u32 key = 0;
-    __u64 *valp;
 
-    valp = bpf_map_lookup_elem(&my_map, &key);
+    
 
-    if (!valp){
-        bpf_map_update_elem(&my_map,&key, &data_meta_value, BPF_ANY);
-        return 0;
-    }
+    bpf_printk("packet recedved");
+
+    // __u64 *valp;
+
+    // valp = bpf_map_lookup_elem(&my_map, &key);
+
+    // if (!valp){
+    //     bpf_map_update_elem(&my_map,&key, &data_meta_value, BPF_ANY);
+    //     return 0;
+    // }
     
     // bpf_map_update_elem(&my_map, &key, &data_meta_value, BPF_ANY);
 

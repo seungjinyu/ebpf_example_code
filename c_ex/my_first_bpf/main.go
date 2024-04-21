@@ -50,7 +50,7 @@ func main() {
 		select {
 
 		case <-tick:
-			log.Println("ticking")
+			// log.Println("ticking")
 
 		case <-stop:
 			log.Println("Signal accepted")

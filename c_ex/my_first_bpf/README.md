@@ -14,3 +14,8 @@ ip link set dev eth0 xdp off
 
 # llvm install 
 apt-get install llvm
+
+# ftrace bpf_printk
+mount -t debugfs none /sys/kernel/debug
+
+# ping to the right ip

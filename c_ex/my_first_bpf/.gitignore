@@ -1,2 +1,5 @@
 xdp-pass.o
 xdp-pass.ll
+my_first_bpf
+xdp_bpfel.o
+xdp_bpfeb.o

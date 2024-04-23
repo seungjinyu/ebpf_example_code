@@ -4,6 +4,7 @@
 #include "common.h"
 
 #define __ctx_buff xdp_md
+
 #define ETH_ALEN	6
 
 struct  {
@@ -24,7 +25,8 @@ int xdp_prog_simple(struct xdp_md *ctx)
 
     
 
-    bpf_printk("packet recedved");
+    bpf_printk("[XDP]packet received");
+    bpf_printk(" %d ",data_meta_value);
 
     // __u64 *valp;
 

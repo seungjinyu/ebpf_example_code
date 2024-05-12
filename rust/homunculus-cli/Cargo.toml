@@ -1,0 +1,12 @@
+[package]
+name = "homunculus-cli"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = { version = "4.5.4", features = ["derive"] }
+rusoto_core = "0.46"
+rusoto_eks = "0.46"
+tokio = { version = "1", features = ["full"] }
